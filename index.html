@@ -113,130 +113,178 @@ footer{text-align:center;padding:30px}
 <footer>
 © 2026 • Родословные древа Баппагайинского наслега
 </footer>
-
-<script>
-const gallery=document.getElementById('gallery');
-
-function save(data){
-localStorage.setItem('trees',JSON.stringify(data));
-}
-
-function load(){
-return JSON.parse(localStorage.getItem('trees')||'[]');
-}
-
-function render(){
-
-let data=load();
-
-gallery.innerHTML='';
-
-if(data.length===0){
-gallery.innerHTML='<div>Пока нет древ</div>';
-return;
-}
-
-data.forEach((item,index)=>{
-
-let card=document.createElement('div');
-card.className='card';
-
-card.innerHTML=`
-<div class="image-wrap">
-<img src="${item.image}" onclick="openModal('${item.image}')">
-</div>
-
-<div class="card-content">
-<h3>${item.title}</h3>
-
-<button onclick="openModal('${item.image}')">
-Увеличить
-</button>
-
-<button class="delete-btn" onclick="deleteImage(${index})">
-Удалить
-</button>
-</div>
-`;
-
-gallery.appendChild(card);
-
-});
-}
-
-function addImage(){
-
-let title=document.getElementById('title').value||'Новое древо';
-let file=document.getElementById('fileInput').files[0];
-
-if(!file){
-alert('Выберите фото');
-return;
-}
-
-let reader=new FileReader();
-
-reader.onload=function(e){
-
-let data=load();
-
-data.push({
-title:title,
-image:e.target.result
-});
-
-save(data);
-
-let fam=document.createElement('div');
-fam.textContent=title;
-
-document.getElementById('familyList').appendChild(fam);
-
-render();
-
-document.getElementById('title').value='';
-document.getElementById('fileInput').value='';
-
-}
-
-reader.readAsDataURL(file);
-}
-
-function deleteImage(index){
-
-if(!confirm('Удалить древо?')) return;
-
-let data=load();
-
-data.splice(index,1);
-
-save(data);
-
-render();
-}
-
-function openModal(src){
-
-document.getElementById('modal').style.display='flex';
-
-document.getElementById('modalImg').src=src;
-}
-
-function closeModal(){
-document.getElementById('modal').style.display='none';
-}
-
-window.onclick=function(e){
-
-let modal=document.getElementById('modal');
-
-if(e.target===modal){
-closeModal();
-}
-}
-
-render();
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+      "firebase/storage": "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+    }
+  }
 </script>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlj4P0iaq0eJLGkPlCyUPiWX-2L7HUxEw",
+    authDomain: "bappagayi-dreva.firebaseapp.com",
+    projectId: "bappagayi-dreva",
+    storageBucket: "bappagayi-dreva.firebasestorage.app",
+    messagingSenderId: "702432261944",
+    appId: "1:702432261944:web:256ed239410fc4a85f33cd",
+    measurementId: "G-EQK76ST132"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const storage = getStorage(app);
+  const db = getFirestore(app);
+
+  const gallery = document.getElementById('gallery');
+  const familyList = document.getElementById('familyList');
+
+  // Сохранить начальный список фамилий
+  const defaultFamilies = [
+    "Алексеевтар", "Васильевтар", "Гаврильевтар", "Ксенофонтовтар",
+    "Кириллиннэр", "Леонтьевтар", "Николаевтар", "Никифоровтар",
+    "Огудовтар", "Платоновтар", "Силээн Григорьевтар", "Сортуоллар",
+    "Таскиннар", "Уйбааскы Уус", "Федоровтар", "Харлампьевтар",
+    "Шамаевтар", "Яковлевтар"
+  ];
+
+  async function addImage() {
+    let title = document.getElementById('title').value || 'Новое древо';
+    let file = document.getElementById('fileInput').files[0];
+    
+    if (!file) {
+      alert('Выберите фото');
+      return;
+    }
+    
+    const btn = document.querySelector('.panel button');
+    const originalText = btn.textContent;
+    btn.textContent = 'Загрузка...';
+    btn.disabled = true;
+    
+    try {
+      const imageRef = ref(storage, `trees/${Date.now()}_${file.name}`);
+      await uploadBytes(imageRef, file);
+      const imageUrl = await getDownloadURL(imageRef);
+      
+      await addDoc(collection(db, "trees"), {
+        title: title,
+        image: imageUrl,
+        createdAt: new Date().toISOString()
+      });
+      
+      document.getElementById('title').value = '';
+      document.getElementById('fileInput').value = '';
+      
+      await render();
+    } catch (error) {
+      console.error("Ошибка:", error);
+      alert("Ошибка загрузки: " + error.message);
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  async function load() {
+    const querySnapshot = await getDocs(collection(db, "trees"));
+    const trees = [];
+    querySnapshot.forEach((doc) => {
+      trees.push({ id: doc.id, ...doc.data() });
+    });
+    trees.sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1);
+    return trees;
+  }
+
+  async function render() {
+    let data = await load();
+    gallery.innerHTML = '';
+    
+    // Обновляем список фамилий: сначала стандартные, потом добавленные
+    let allFamilies = [...defaultFamilies];
+    data.forEach(item => {
+      if (!allFamilies.includes(item.title)) {
+        allFamilies.push(item.title);
+      }
+    });
+    
+    if (familyList) {
+      let familiesHtml = '';
+      allFamilies.forEach(fam => {
+        familiesHtml += `<div>${escapeHtml(fam)}</div>`;
+      });
+      familyList.innerHTML = familiesHtml;
+    }
+    
+    if (data.length === 0) {
+      gallery.innerHTML = '<div>Пока нет древ</div>';
+      return;
+    }
+    
+    data.forEach((item) => {
+      let card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="image-wrap">
+          <img src="${item.image}" onclick="window.openModal('${item.image}')">
+        </div>
+        <div class="card-content">
+          <h3>${escapeHtml(item.title)}</h3>
+04:24
+<button onclick="window.openModal('${item.image}')">Увеличить</button>
+          <button class="delete-btn" onclick="window.deleteImage('${item.id}')">Удалить</button>
+        </div>
+      `;
+      gallery.appendChild(card);
+    });
+  }
+
+  window.deleteImage = async function(id) {
+    if (!confirm('Удалить древо?')) return;
+    try {
+      await deleteDoc(doc(db, "trees", id));
+      await render();
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+      alert("Ошибка удаления");
+    }
+  };
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  window.openModal = function(src) {
+    document.getElementById('modal').style.display = 'flex';
+    document.getElementById('modalImg').src = src;
+  };
+
+  window.closeModal = function() {
+    document.getElementById('modal').style.display = 'none';
+  };
+
+  window.onclick = function(e) {
+    let modal = document.getElementById('modal');
+    if (e.target === modal) window.closeModal();
+  };
+
+  window.addImage = addImage;
+
+  render();
+</script>
+
 
 </body>
 </html>
