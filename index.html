@@ -1,155 +1,69 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Родословные древа Баппагайинского наслега</title>
-<style>
-body{margin:0;font-family:Arial;background:#3f6f34;color:white}
-header{text-align:center;padding:50px 20px}
-h1{font-size:48px}
-.info,.families,.panel{
-width:90%;max-width:1000px;margin:25px auto;
-background:white;color:black;padding:25px;border-radius:20px
-}
-.gallery{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:25px;padding:30px
-}
-.card{
-background:white;color:black;border-radius:20px;overflow:hidden
-}
-.image-wrap{
-height:420px;background:#eee;
-display:flex;align-items:center;justify-content:center
-}
-.card img{
-width:100%;height:100%;object-fit:contain;cursor:pointer
-}
-.card-content{padding:15px}
-button,input{
-padding:12px;border:none;border-radius:10px;margin-top:10px
-}
-button{background:#3f6f34;color:white;font-weight:bold;cursor:pointer}
-.delete-btn{background:#b22222}
-.family-list{columns:2}
-.modal{
-display:none;position:fixed;left:0;top:0;
-width:100%;height:100%;
-background:rgba(0,0,0,.94);
-justify-content:center;align-items:center;
-z-index:9999
-}
-.modal img{
-max-width:95%;max-height:95%;object-fit:contain
-}
-.close{
-position:absolute;right:30px;top:20px;
-font-size:40px;color:white;cursor:pointer
-}
-footer{text-align:center;padding:30px}
-</style>
+    <meta charset="UTF-8">
+    <title>Родословные древа Баппагайинского наслега</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#2d5a2c;font-family:Arial;color:white}
+        header{text-align:center;padding:50px 20px;background:#1e3a1d}
+        h1{font-size:48px}
+        .container{max-width:1200px;margin:auto;padding:20px}
+        .info{background:white;color:#1e3a1d;padding:25px;border-radius:24px;margin:30px 0;text-align:center}
+        .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:30px;margin:40px 0}
+        .card{background:white;border-radius:28px;overflow:hidden;cursor:pointer}
+        .card-img{height:400px;display:flex;align-items:center;justify-content:center;background:#f0f0f0}
+        .card-img img{max-width:100%;max-height:100%;object-fit:contain}
+        .card-content{padding:20px;color:#1e3a1d;text-align:center}
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.95);justify-content:center;align-items:center}
+        .modal img{max-width:90%;max-height:90%}
+        .close{position:absolute;top:30px;right:40px;font-size:50px;color:white;cursor:pointer}
+        footer{text-align:center;padding:30px;background:#1e3a1d}
+    </style>
 </head>
 <body>
-<header>
-<h1>Родословные древа Баппагайинского наслега</h1>
-<p>Архив родословных древ</p>
-</header>
-<div class="info">
-Все родословные древа собирали и составляли:
-<br><br>
-<b>Кириллин Аркадий Кузьмич</b>
-<br>
-и
-<br>
-<b>Кириллин Валерий Кузьмич</b>
+<header><h1>🌳  Родословные древа</h1><p>Архив родословных древ</p></header>
+<div class="container">
+    <div class="info"><strong>Все родословные древа собирали и составляли:</strong><br><br>📜  Кириллин Аркадий Кузьмич<br>📜  Кириллин Валерий Кузьмич</div>
+    <div class="gallery" id="gallery"></div>
 </div>
-<div class="families">
-<h2>Перечень фамилий</h2>
-<div class="family-list" id="familyList">
-<div>Алексеевтар</div><div>Васильевтар</div><div>Гаврильевтар</div>
-<div>Ксенофонтовтар</div><div>Кириллиннэр</div><div>Леонтьевтар</div>
-<div>Николаевтар</div><div>Никифоровтар</div><div>Огудовтар</div>
-<div>Платоновтар</div><div>Силээн Григорьевтар</div><div>Сортуоллар</div>
-<div>Таскиннар</div><div>Уйбааскы Уус</div><div>Федоровтар</div>
-<div>Харлампьевтар</div><div>Шамаевтар</div><div>Яковлевтар</div>
-</div>
-</div>
-<div class="panel">
-<h2>Добавить древо</h2>
-<input type="text" id="title" placeholder="Название рода">
-<br>
-<input type="file" id="fileInput" accept="image/*">
-<br>
-<button onclick="addImage()">Добавить</button>
-</div>
-<div class="gallery" id="gallery"></div>
-<div class="modal" id="modal">
-<span class="close" onclick="closeModal()">&times;</span>
-<img id="modalImg">
-</div>
-<footer>© 2026 • Родословные древа Баппагайинского наслега</footer>
+<div id="modal" class="modal"><span class="close" onclick="closeModal()">&times;</span><img id="modalImg"></div>
+<footer>© 2026 • Родословные древа</footer>
 
 <script>
-const gallery = document.getElementById('gallery');
-function save(data){ localStorage.setItem('trees',JSON.stringify(data)); }
-function load(){ return JSON.parse(localStorage.getItem('trees')||'[]'); }
+    // Укажите ваш логин на GitHub
+    const owner = 'hsdanifa-star';  // ← ИСПРАВЬТЕ НА СВОЙ ЛОГИН
+    const repo = 'bappagayi-dreva';
+    const path = 'images';
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
 
-async function uploadToBlob(base64){
-  const res = await fetch('/api/upload', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({image: base64})
-  });
-  if(!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-  return data.url;
-}
-
-async function addImage(){
-  let title = document.getElementById('title').value||'Новое древо';
-  let file = document.getElementById('fileInput').files[0];
-  if(!file){ alert('Выберите фото'); return; }
-  const btn = document.querySelector('.panel button');
-  btn.textContent = 'Загрузка...';
-  btn.disabled = true;
-  try {
-    const base64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=e=>r(e.target.result); fr.readAsDataURL(file); });
-    const url = await uploadToBlob(base64);
-    let data = load();
-    data.push({ title, image: url, createdAt: new Date().toISOString() });
-    save(data);
-    render();
-    document.getElementById('title').value='';
-    document.getElementById('fileInput').value='';
-  } catch(e){ alert('Ошибка: '+e.message); }
-  finally{ btn.textContent='Добавить'; btn.disabled=false; }
-}
-
-function render(){
-05:02
-let data = load();
-  gallery.innerHTML = '';
-  if(data.length===0){ gallery.innerHTML='<div>Пока нет древ</div>'; return; }
-  data.forEach((item,index)=>{
-    let card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="image-wrap"><img src="${item.image}" onclick="openModal('${item.image}')"></div>
-      <div class="card-content"><h3>${escapeHtml(item.title)}</h3>
-      <button onclick="openModal('${item.image}')">Увеличить</button>
-      <button class="delete-btn" onclick="deleteImage(${index})">Удалить</button></div>`;
-    gallery.appendChild(card);
-  });
-}
-
-function deleteImage(i){ if(confirm('Удалить древо?')){ let d=load(); d.splice(i,1); save(d); render(); } }
-function escapeHtml(str){ return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-function openModal(src){ document.getElementById('modal').style.display='flex'; document.getElementById('modalImg').src=src; }
-function closeModal(){ document.getElementById('modal').style.display='none'; }
-window.onclick = e => { if(e.target===document.getElementById('modal')) closeModal(); };
-render();
+    async function loadGallery() {
+        try {
+            const res = await fetch(apiUrl);
+            if (!res.ok) throw new Error('Папка images не найдена');
+            const files = await res.json();
+            const images = files.filter(f => /\.(jpe?g|png|gif|webp)$/i.test(f.name));
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            images.forEach(file => {
+                const imgUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${path}/${file.name}`;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-img"><img src="${imgUrl}" onclick="openModal('${imgUrl}')" loading="lazy"></div>
+                    <div class="card-content">${file.name.replace(/\.jpe?g$/i, '')}</div>
+                `;
+                gallery.appendChild(card);
+            });
+            if (images.length === 0) gallery.innerHTML = '<div style="color:white">Нет изображений в папке images</div>';
+        } catch(e) {
+            document.getElementById('gallery').innerHTML = '<div style="color:white">Ошибка загрузки. Проверьте, что папка images существует и в ней есть файлы.</div>';
+        }
+    }
+    function openModal(src) { document.getElementById('modal').style.display='flex'; document.getElementById('modalImg').src=src; }
+    function closeModal() { document.getElementById('modal').style.display='none'; }
+    window.onclick = e => { if(e.target===document.getElementById('modal')) closeModal(); };
+    loadGallery();
 </script>
 </body>
 </html>
